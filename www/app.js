@@ -16,6 +16,12 @@ const state = {
     wasmLoaded: false
 };
 
+// Load saved pillar height if available
+const savedPillar = parseFloat(localStorage.getItem('cli_pillar_h'));
+if (!isNaN(savedPillar) && savedPillar > 0) {
+    state.eyeHeight = savedPillar;
+}
+
 // Pure JavaScript Fallback Math Engine
 const MathEngine = {
     calculateDirect(distance, angleDeg, eyeHeight) {
@@ -74,6 +80,8 @@ class HeightFinderApp {
 
         // 4. Bind DOM controls and listeners
         this.bindDOM();
+        this.bindPillarModal();
+        this.updatePillarBadge();
 
         // 5. Initial calculation
         this.recalculate();
@@ -174,7 +182,6 @@ class HeightFinderApp {
                     distanceInput.value = num.toFixed(1);
                     distanceRange.value = num;
                     this.playThrottledTick();
-                    this.highlightActivePreset('distancePresets', num);
                     this.recalculate();
                 }
             };
@@ -183,26 +190,25 @@ class HeightFinderApp {
             distanceInput.addEventListener('change', (e) => onDistChange(e.target.value));
         }
 
-        // Distance Presets
-        const distPresets = document.querySelectorAll('#distancePresets .preset-btn');
-        distPresets.forEach(btn => {
-            btn.addEventListener('click', () => {
-                distPresets.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const val = state.unit === 'm'
-                    ? parseFloat(btn.getAttribute('data-m'))
-                    : parseFloat(btn.getAttribute('data-ft'));
-                state.distance = val;
-                if (distanceInput) distanceInput.value = val.toFixed(1);
-                if (distanceRange) distanceRange.value = val;
-                sound.playClick();
-                this.recalculate();
-            });
-        });
-
-        // Paces Calculator
+        // Inline Paces Helper
         const pacesInput = document.getElementById('pacesInput');
         const pacesApplyBtn = document.getElementById('pacesApplyBtn');
+        const pacesPreview = document.getElementById('pacesPreviewText');
+
+        const updatePacesPreview = () => {
+            if (!pacesInput || !pacesPreview) return;
+            const paces = parseInt(pacesInput.value, 10);
+            if (!isNaN(paces) && paces > 0) {
+                const paceDist = state.unit === 'm' ? paces * 0.75 : paces * 2.46;
+                pacesPreview.textContent = `≈ ${paceDist.toFixed(1)} ${state.unit}`;
+            }
+        };
+
+        if (pacesInput) {
+            pacesInput.addEventListener('input', updatePacesPreview);
+            updatePacesPreview();
+        }
+
         if (pacesApplyBtn && pacesInput) {
             pacesApplyBtn.addEventListener('click', () => {
                 const paces = parseInt(pacesInput.value, 10);
@@ -238,22 +244,6 @@ class HeightFinderApp {
             angleInput.addEventListener('change', (e) => onAngleChange(e.target.value));
         }
 
-        // Angle Presets
-        const anglePresets = document.querySelectorAll('.step-card:nth-of-type(2) .preset-btn');
-        anglePresets.forEach(btn => {
-            btn.addEventListener('click', () => {
-                anglePresets.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const deg = parseFloat(btn.getAttribute('data-angle'));
-                state.angle = deg;
-                if (angleInput) angleInput.value = deg.toFixed(1);
-                if (angleRange) angleRange.value = deg;
-                this.updateProtractorStringHelper();
-                sound.playClick();
-                this.recalculate();
-            });
-        });
-
         // Protractor String Helper Input
         const stringAngleInput = document.getElementById('stringAngleInput');
         if (stringAngleInput) {
@@ -273,55 +263,17 @@ class HeightFinderApp {
             });
         }
 
-        // --- Step 3: Eye Height Inputs ---
-        const eyeInput = document.getElementById('eyeHeightInput');
-        const eyeRange = document.getElementById('eyeHeightRange');
-
-        if (eyeInput && eyeRange) {
-            const onEyeChange = (val) => {
-                const num = parseFloat(val);
-                if (!isNaN(num) && num > 0) {
-                    state.eyeHeight = num;
-                    eyeInput.value = num.toFixed(2);
-                    eyeRange.value = num;
-                    this.playThrottledTick();
-                    this.recalculate();
+        // --- Visualizer Accordion Resize Hook ---
+        const visAccordion = document.getElementById('visualizerAccordion');
+        if (visAccordion) {
+            visAccordion.addEventListener('toggle', () => {
+                if (visAccordion.open && this.visualizer) {
+                    setTimeout(() => this.visualizer.resize(), 60);
                 }
-            };
-
-            eyeRange.addEventListener('input', (e) => onEyeChange(e.target.value));
-            eyeInput.addEventListener('change', (e) => onEyeChange(e.target.value));
-        }
-
-        // Eye Presets
-        const eyePresets = document.querySelectorAll('#eyePresets .preset-btn');
-        eyePresets.forEach(btn => {
-            btn.addEventListener('click', () => {
-                eyePresets.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const val = state.unit === 'm'
-                    ? parseFloat(btn.getAttribute('data-eye-m'))
-                    : parseFloat(btn.getAttribute('data-eye-ft'));
-                state.eyeHeight = val;
-                if (eyeInput) eyeInput.value = val.toFixed(2);
-                if (eyeRange) eyeRange.value = val;
-                sound.playClick();
-                this.recalculate();
-            });
-        });
-
-        // --- Result Actions ---
-        const celebrateBtn = document.getElementById('celebrateBtn');
-        if (celebrateBtn) {
-            celebrateBtn.addEventListener('click', () => {
-                if (this.confetti) {
-                    const rect = celebrateBtn.getBoundingClientRect();
-                    this.confetti.burst(rect.left + rect.width / 2, rect.top);
-                }
-                sound.playSuccess();
             });
         }
 
+        // --- Copy Result Action ---
         const copyBtn = document.getElementById('copyResultBtn');
         if (copyBtn) {
             copyBtn.addEventListener('click', () => this.copyResult());
@@ -361,9 +313,101 @@ class HeightFinderApp {
         }
     }
 
+    updatePillarBadge() {
+        const btn = document.getElementById('pillarSettingsBtn');
+        if (btn) {
+            btn.innerHTML = `⚙ Pillar <span class="pillar-val">${state.eyeHeight.toFixed(2)} ${state.unit}</span>`;
+        }
+    }
+
+    bindPillarModal() {
+        const btn = document.getElementById('pillarSettingsBtn');
+        const modal = document.getElementById('pillarModal');
+        const closeBtn = document.getElementById('closePillarBtn');
+        const saveBtn = document.getElementById('pillarSaveBtn');
+        const input = document.getElementById('pillarModalInput');
+        const range = document.getElementById('pillarModalRange');
+
+        if (!btn || !modal) return;
+
+        const syncModalUI = () => {
+            if (input) input.value = state.eyeHeight.toFixed(2);
+            if (range) range.value = state.eyeHeight;
+            const presets = document.querySelectorAll('#pillarPresets .preset-btn');
+            presets.forEach(p => {
+                const val = state.unit === 'm'
+                    ? parseFloat(p.getAttribute('data-eye-m'))
+                    : parseFloat(p.getAttribute('data-eye-ft'));
+                p.classList.toggle('active', Math.abs(val - state.eyeHeight) < 0.04);
+            });
+        };
+
+        const openModal = () => {
+            syncModalUI();
+            modal.classList.add('open');
+            sound.playClick();
+        };
+
+        const closeModal = (save = false) => {
+            if (save && input) {
+                const num = parseFloat(input.value);
+                if (!isNaN(num) && num > 0) {
+                    state.eyeHeight = num;
+                    localStorage.setItem('cli_pillar_h', num.toString());
+                    this.updatePillarBadge();
+                    this.recalculate();
+                }
+            }
+            modal.classList.remove('open');
+            sound.playSnap();
+        };
+
+        btn.addEventListener('click', openModal);
+        if (closeBtn) closeBtn.addEventListener('click', () => closeModal(false));
+        if (saveBtn) saveBtn.addEventListener('click', () => closeModal(true));
+
+        if (input && range) {
+            input.addEventListener('change', (e) => {
+                const num = parseFloat(e.target.value);
+                if (!isNaN(num) && num > 0) {
+                    range.value = num;
+                    this.playThrottledTick();
+                }
+            });
+            range.addEventListener('input', (e) => {
+                const num = parseFloat(e.target.value);
+                input.value = num.toFixed(2);
+                this.playThrottledTick();
+            });
+        }
+
+        const presets = document.querySelectorAll('#pillarPresets .preset-btn');
+        presets.forEach(p => {
+            p.addEventListener('click', () => {
+                presets.forEach(x => x.classList.remove('active'));
+                p.classList.add('active');
+                const val = state.unit === 'm'
+                    ? parseFloat(p.getAttribute('data-eye-m'))
+                    : parseFloat(p.getAttribute('data-eye-ft'));
+                if (input) input.value = val.toFixed(2);
+                if (range) range.value = val;
+                sound.playClick();
+            });
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(true);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('open')) {
+                closeModal(false);
+            }
+        });
+    }
+
     setUnit(newUnit) {
         if (state.unit === newUnit) return;
-        const oldUnit = state.unit;
         state.unit = newUnit;
 
         // Toggle button states
@@ -383,6 +427,9 @@ class HeightFinderApp {
             state.eyeHeight = parseFloat(MathEngine.ftToM(state.eyeHeight).toFixed(2));
         }
 
+        localStorage.setItem('cli_pillar_h', state.eyeHeight.toString());
+        this.updatePillarBadge();
+
         // Update slider bounds & unit labels
         this.updateSliderBoundsForUnit(newUnit);
 
@@ -392,10 +439,10 @@ class HeightFinderApp {
         if (dInput) dInput.value = state.distance.toFixed(1);
         if (dRange) dRange.value = state.distance;
 
-        const eyeInput = document.getElementById('eyeHeightInput');
-        const eyeRange = document.getElementById('eyeHeightRange');
-        if (eyeInput) eyeInput.value = state.eyeHeight.toFixed(2);
-        if (eyeRange) eyeRange.value = state.eyeHeight;
+        const pInput = document.getElementById('pillarModalInput');
+        const pRange = document.getElementById('pillarModalRange');
+        if (pInput) pInput.value = state.eyeHeight.toFixed(2);
+        if (pRange) pRange.value = state.eyeHeight;
 
         // Update unit labels on UI
         document.querySelectorAll('.unit-label').forEach(el => {
@@ -404,6 +451,17 @@ class HeightFinderApp {
 
         // Update Preset button texts
         this.updatePresetLabels(newUnit);
+
+        // Update inline paces preview
+        const pacesInput = document.getElementById('pacesInput');
+        const pacesPreview = document.getElementById('pacesPreviewText');
+        if (pacesInput && pacesPreview) {
+            const paces = parseInt(pacesInput.value, 10);
+            if (!isNaN(paces) && paces > 0) {
+                const paceDist = state.unit === 'm' ? paces * 0.75 : paces * 2.46;
+                pacesPreview.textContent = `≈ ${paceDist.toFixed(1)} ${state.unit}`;
+            }
+        }
 
         // Update visualizer unit
         if (this.visualizer) {
@@ -417,49 +475,30 @@ class HeightFinderApp {
     updateSliderBoundsForUnit(unit) {
         const dRange = document.getElementById('distanceRange');
         const dInput = document.getElementById('distanceInput');
-        const eyeRange = document.getElementById('eyeHeightRange');
-        const eyeInput = document.getElementById('eyeHeightInput');
+        const pRange = document.getElementById('pillarModalRange');
+        const pInput = document.getElementById('pillarModalInput');
 
         if (unit === 'ft') {
             if (dRange) { dRange.min = '3'; dRange.max = '160'; dRange.step = '1'; }
-            if (dInput) { dInput.min = '3'; dInput.max = '300'; dInput.step = '1'; }
-            if (eyeRange) { eyeRange.min = '2.5'; eyeRange.max = '7.5'; eyeRange.step = '0.1'; }
-            if (eyeInput) { eyeInput.min = '1.5'; eyeInput.max = '9.0'; eyeInput.step = '0.1'; }
+            if (dInput) { dInput.min = '3'; dInput.max = '500'; dInput.step = '1'; }
+            if (pRange) { pRange.min = '1.0'; pRange.max = '10.0'; pRange.step = '0.1'; }
+            if (pInput) { pInput.min = '0.5'; pInput.max = '12.0'; pInput.step = '0.1'; }
         } else {
             if (dRange) { dRange.min = '1.5'; dRange.max = '50'; dRange.step = '0.5'; }
-            if (dInput) { dInput.min = '1.0'; dInput.max = '100'; dInput.step = '0.5'; }
-            if (eyeRange) { eyeRange.min = '0.8'; eyeRange.max = '2.4'; eyeRange.step = '0.05'; }
-            if (eyeInput) { eyeInput.min = '0.5'; eyeInput.max = '3.0'; eyeInput.step = '0.05'; }
+            if (dInput) { dInput.min = '1.0'; dInput.max = '500'; dInput.step = '0.5'; }
+            if (pRange) { pRange.min = '0.4'; pRange.max = '3.0'; pRange.step = '0.05'; }
+            if (pInput) { pInput.min = '0.2'; pInput.max = '3.5'; pInput.step = '0.05'; }
         }
     }
 
     updatePresetLabels(unit) {
-        const distPresets = document.querySelectorAll('#distancePresets .preset-btn');
-        distPresets.forEach(btn => {
-            const mVal = btn.getAttribute('data-m');
-            const ftVal = btn.getAttribute('data-ft');
-            btn.textContent = unit === 'm' ? `${mVal} m` : `${ftVal} ft`;
-        });
-
-        const eyePresets = document.querySelectorAll('#eyePresets .preset-btn');
-        eyePresets.forEach(btn => {
+        const pillarPresets = document.querySelectorAll('#pillarPresets .preset-btn');
+        pillarPresets.forEach(btn => {
             const mVal = btn.getAttribute('data-eye-m');
             const ftVal = btn.getAttribute('data-eye-ft');
-            if (mVal === '0.80') btn.textContent = unit === 'm' ? 'Low (0.8m)' : 'Low (2.6ft)';
-            if (mVal === '1.20') btn.textContent = unit === 'm' ? 'Standard (1.2m)' : 'Standard (3.9ft)';
-            if (mVal === '1.50') btn.textContent = unit === 'm' ? 'High (1.5m)' : 'High (4.9ft)';
-        });
-    }
-
-    highlightActivePreset(containerId, value) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        const btns = container.querySelectorAll('.preset-btn');
-        btns.forEach(btn => {
-            const targetVal = state.unit === 'm'
-                ? parseFloat(btn.getAttribute('data-m'))
-                : parseFloat(btn.getAttribute('data-ft'));
-            btn.classList.toggle('active', Math.abs(targetVal - value) < 0.2);
+            if (mVal === '0.80') btn.textContent = unit === 'm' ? 'Low (0.8 m)' : 'Low (2.6 ft)';
+            if (mVal === '1.20') btn.textContent = unit === 'm' ? 'Standard (1.2 m)' : 'Standard (3.9 ft)';
+            if (mVal === '1.50') btn.textContent = unit === 'm' ? 'High (1.5 m)' : 'High (4.9 ft)';
         });
     }
 
@@ -512,18 +551,10 @@ class HeightFinderApp {
         const altUnit = u === 'm' ? 'ft' : 'm';
         const altTotal = u === 'm' ? MathEngine.mToFt(totalH).toFixed(1) : MathEngine.ftToM(totalH).toFixed(1);
 
-        // Friendly target nouns & icons
-        const targetNames = {
-            tree: { icon: '🌲', noun: 'tree', fullNoun: 'tree' },
-            building: { icon: '🏢', noun: 'building', fullNoun: 'building' },
-            flagpole: { icon: '🚩', noun: 'flagpole', fullNoun: 'flagpole' }
-        };
-        const targetInfo = targetNames[state.target] || targetNames.tree;
-
         // 2. Update Result Card DOM
         const resultTitle = document.getElementById('resultTitle');
         if (resultTitle) {
-            resultTitle.innerHTML = `${targetInfo.icon} Height: <strong>${totalH.toFixed(1)} ${u}</strong>`;
+            resultTitle.textContent = totalH.toFixed(1);
         }
 
         const resultAlt = document.getElementById('resultAltUnit');

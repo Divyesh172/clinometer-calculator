@@ -35,6 +35,11 @@
                     <button id="unitBtnFt" class="unit-pill-btn" data-unit="ft">Feet</button>
                 </div>
 
+                <!-- Fixed Pillar Height Setting Button -->
+                <button id="pillarSettingsBtn" class="btn-squishy btn-squishy-secondary" title="Configure fixed observation pillar height">
+                    ⚙ Pillar <span class="pillar-val">1.20 m</span>
+                </button>
+
                 <!-- Sound FX Toggle -->
                 <button id="soundToggleBtn" class="btn-squishy btn-squishy-secondary" title="Toggle audio feedback">
                     🔊 Audio
@@ -48,12 +53,134 @@
         </div>
     </header>
 
-    <!-- Main Dual Layout Content -->
-    <main class="app-main">
-        <div class="calculator-grid">
+    <!-- Main Field-Optimized Layout Content -->
+    <main class="app-main field-layout">
 
-            <!-- LEFT COLUMN: Visual Scene -->
-            <section class="visual-card" aria-label="Interactive visual illustration">
+        <!-- 1. OBJECT HEIGHT RESULT CARD - Prominent Primary Readout at Top -->
+        <section class="result-card field-result-card" aria-live="polite">
+            <div class="field-result-label">
+                <span>🏔</span> Object Height
+            </div>
+            <div class="field-result-value">
+                <span id="resultTitle" class="field-height-display">11.7</span>
+                <span class="field-height-unit unit-label">m</span>
+            </div>
+            <div id="resultAltUnit" class="result-alt-unit">
+                (38.4 ft)
+            </div>
+
+            <!-- Visual Breakdown Bar -->
+            <div class="breakdown-section">
+                <div class="breakdown-title">
+                    <span>Height Breakdown</span>
+                    <span id="breakdownTotalBadge">Rise + Pillar</span>
+                </div>
+
+                <!-- Stacked Bar (Rise + Pillar) -->
+                <div class="stacked-bar-container">
+                    <div id="barRise" class="bar-segment-rise" style="width: 89.7%;" title="Rise above pillar"></div>
+                    <div id="barEye" class="bar-segment-eye" style="width: 10.3%;" title="Pillar height"></div>
+                </div>
+
+                <!-- Breakdown Legend -->
+                <div class="breakdown-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot dot-primary"></span>
+                        <span>Rise (h): <strong id="riseValueText">10.5 m</strong></span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-amber"></span>
+                        <span>Pillar (h<sub>pillar</sub>): <strong id="eyeValueText">1.2 m</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simple Math Equation Box -->
+            <div id="equationBox" class="equation-box">
+                10.5 m (rise) + 1.2 m (pillar) = 11.7 m total
+            </div>
+
+            <!-- Sightline Note -->
+            <div id="sightlineNote" class="sightline-note">
+                Sightline (hypotenuse): 18.3 m
+            </div>
+
+            <!-- Result Copy Action -->
+            <button id="copyResultBtn" class="btn-squishy btn-squishy-secondary field-copy-btn">
+                <span>📋</span> Copy Result
+            </button>
+        </section>
+
+        <!-- 2. STEP 1: DISTANCE (d) -->
+        <section class="step-card field-input-card">
+            <div class="step-header">
+                <div class="step-title-group">
+                    <span class="step-number">1</span>
+                    <h2 class="step-title">Distance (d)</h2>
+                </div>
+                <div class="input-display-pill input-display-pill-large">
+                    <input type="number" id="distanceInput" class="num-input num-input-large" value="15.0" min="1" max="500" step="0.5" aria-label="Distance value">
+                    <span class="input-unit unit-label">m</span>
+                </div>
+            </div>
+
+            <!-- Distance Range Slider -->
+            <div class="slider-container">
+                <input type="range" id="distanceRange" class="custom-range" value="15.0" min="2" max="50" step="0.5" aria-label="Distance slider">
+            </div>
+
+            <!-- Inline Paces Helper Row -->
+            <div class="paces-inline-row">
+                <span>🚶</span>
+                <span class="paces-label">Paces:</span>
+                <input type="number" id="pacesInput" class="paces-input" value="20" min="1" max="500">
+                <button id="pacesApplyBtn" class="preset-btn" style="padding:0.25rem 0.65rem; min-height:28px;">→ Apply</button>
+                <span id="pacesPreviewText" class="paces-preview">≈ 15.0 m</span>
+            </div>
+        </section>
+
+        <!-- 3. STEP 2: CLINOMETER ANGLE (θ) -->
+        <section class="step-card field-input-card">
+            <div class="step-header">
+                <div class="step-title-group">
+                    <span class="step-number">2</span>
+                    <h2 class="step-title">Clinometer Angle (θ)</h2>
+                </div>
+                <div class="input-display-pill input-display-pill-large">
+                    <input type="number" id="angleInput" class="num-input num-input-large" value="35.0" min="1" max="85" step="0.5" aria-label="Angle in degrees">
+                    <span class="input-unit">°</span>
+                </div>
+            </div>
+
+            <!-- Angle Range Slider -->
+            <div class="slider-container">
+                <input type="range" id="angleRange" class="custom-range" value="35.0" min="2" max="85" step="0.5" aria-label="Angle slider">
+            </div>
+
+            <!-- Friendly Protractor Accordion -->
+            <details class="protractor-accordion">
+                <summary>📐 Plumb-line protractor reading</summary>
+                <div class="protractor-content">
+                    <p>Sighting angle where weighted plumb line hangs:</p>
+                    <div class="string-sync-row">
+                        <label for="stringAngleInput">Plumb angle:</label>
+                        <div class="string-input-pill">
+                            <input type="number" id="stringAngleInput" class="num-input" value="55" min="5" max="85" step="1" style="width:50px;">
+                            <span class="input-unit">°</span>
+                        </div>
+                        <span id="stringConversionText" class="string-conv-text">➔ Tilt: 90° − 55° = 35.0°</span>
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <!-- 4. COLLAPSIBLE SCENE VISUALIZER -->
+        <details class="visualizer-accordion" id="visualizerAccordion">
+            <summary>
+                <span>🎨 Scene Visualizer</span>
+                <span class="vis-hint">Interactive diagram</span>
+            </summary>
+            <div class="visual-card field-visual-card">
                 <div class="visual-topbar">
                     <!-- Target Object Selector -->
                     <div class="target-selector" role="radiogroup" aria-label="Choose target to measure">
@@ -70,7 +197,7 @@
 
                     <!-- Canvas Drag Hint Pill -->
                     <div class="canvas-hint-pill">
-                        <span>👆</span> Drag surveyor or apex
+                        <span>👆</span> Drag pillar or apex
                     </div>
                 </div>
 
@@ -91,185 +218,52 @@
                     </div>
                     <div class="status-item">
                         <div class="status-label">Height (H)</div>
-                        <div id="statusHeight" class="status-val highlight-nature">12.1 m</div>
+                        <div id="statusHeight" class="status-val highlight-nature">11.7 m</div>
                     </div>
                 </div>
-            </section>
+            </div>
+        </details>
 
-            <!-- RIGHT COLUMN: Input Cards & Result -->
-            <section class="inputs-column" aria-label="Measurement inputs and results">
-
-                <!-- STEP 1 CARD: Distance -->
-                <div class="step-card">
-                    <div class="step-header">
-                        <div class="step-title-group">
-                            <span class="step-number">1</span>
-                            <h2 class="step-title">Distance (d)</h2>
-                        </div>
-                        <div class="input-display-pill">
-                            <input type="number" id="distanceInput" class="num-input" value="15.0" min="1" max="100" step="0.5" aria-label="Distance value">
-                            <span class="input-unit unit-label">m</span>
-                        </div>
-                    </div>
-
-                    <!-- Distance Range Slider -->
-                    <div class="slider-container">
-                        <input type="range" id="distanceRange" class="custom-range" value="15.0" min="2" max="50" step="0.5" aria-label="Distance slider">
-                    </div>
-
-                    <!-- Quick Preset Buttons -->
-                    <div class="preset-row" id="distancePresets">
-                        <button class="preset-btn" data-m="5" data-ft="15">5 m</button>
-                        <button class="preset-btn" data-m="10" data-ft="30">10 m</button>
-                        <button class="preset-btn active" data-m="15" data-ft="50">15 m</button>
-                        <button class="preset-btn" data-m="25" data-ft="80">25 m</button>
-                    </div>
-
-                    <!-- Paces Calculator Helper Box -->
-                    <div class="paces-helper-box">
-                        <div>🚶 <strong>Pace helper</strong> (~0.75 m / pace)</div>
-                        <div class="paces-row">
-                            <span>Paces:</span>
-                            <input type="number" id="pacesInput" class="paces-input" value="20" min="1" max="150">
-                            <button id="pacesApplyBtn" class="preset-btn" style="padding:0.3rem 0.75rem; min-height:30px;">Apply</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- STEP 2 CARD: Tilt Angle -->
-                <div class="step-card">
-                    <div class="step-header">
-                        <div class="step-title-group">
-                            <span class="step-number">2</span>
-                            <h2 class="step-title">Clinometer Angle (θ)</h2>
-                        </div>
-                        <div class="input-display-pill">
-                            <input type="number" id="angleInput" class="num-input" value="35.0" min="1" max="85" step="0.5" aria-label="Angle in degrees">
-                            <span class="input-unit">°</span>
-                        </div>
-                    </div>
-
-                    <!-- Angle Range Slider -->
-                    <div class="slider-container">
-                        <input type="range" id="angleRange" class="custom-range" value="35.0" min="2" max="85" step="0.5" aria-label="Angle slider">
-                    </div>
-
-                    <!-- Angle Quick Presets -->
-                    <div class="preset-row">
-                        <button class="preset-btn" data-angle="15">15°</button>
-                        <button class="preset-btn active" data-angle="35">35°</button>
-                        <button class="preset-btn" data-angle="45">45° (1:1)</button>
-                        <button class="preset-btn" data-angle="60">60°</button>
-                    </div>
-
-                    <!-- Friendly Protractor Accordion -->
-                    <details class="protractor-accordion">
-                        <summary>📐 Plumb-line protractor reading</summary>
-                        <div class="protractor-content">
-                            <p>Sighting angle where weighted plumb line hangs:</p>
-                            <div class="string-sync-row">
-                                <label for="stringAngleInput">Plumb angle:</label>
-                                <div class="string-input-pill">
-                                    <input type="number" id="stringAngleInput" class="num-input" value="55" min="5" max="85" step="1" style="width:50px;">
-                                    <span class="input-unit">°</span>
-                                </div>
-                                <span id="stringConversionText" class="string-conv-text">➔ Tilt: 90° − 55° = 35.0°</span>
-                            </div>
-                        </div>
-                    </details>
-                </div>
-
-                <!-- STEP 3 CARD: Pillar Height -->
-                <div class="step-card">
-                    <div class="step-header">
-                        <div class="step-title-group">
-                            <span class="step-number">3</span>
-                            <h2 class="step-title">Pillar Height (h<sub>pillar</sub>)</h2>
-                        </div>
-                        <div class="input-display-pill">
-                            <input type="number" id="eyeHeightInput" class="num-input" value="1.20" min="0.2" max="3.0" step="0.05" aria-label="Pillar height">
-                            <span class="input-unit unit-label">m</span>
-                        </div>
-                    </div>
-
-                    <!-- Pillar Height Range Slider -->
-                    <div class="slider-container">
-                        <input type="range" id="eyeHeightRange" class="custom-range" value="1.20" min="0.4" max="2.5" step="0.05" aria-label="Pillar height slider">
-                    </div>
-
-                    <!-- Quick Presets for Pillar Height -->
-                    <div class="preset-row" id="eyePresets">
-                        <button class="preset-btn" data-eye-m="0.80" data-eye-ft="2.6">Low (0.8m)</button>
-                        <button class="preset-btn active" data-eye-m="1.20" data-eye-ft="3.9">Standard (1.2m)</button>
-                        <button class="preset-btn" data-eye-m="1.50" data-eye-ft="4.9">High (1.5m)</button>
-                    </div>
-
-                    <div style="margin-top: 0.65rem; font-size: 0.78rem; color: var(--color-text-muted);">
-                        📌 Fixed pillar datum &bull; Observer eye height does not affect the calculation
-                    </div>
-                </div>
-
-                <!-- RESULT CARD -->
-                <div class="result-card" aria-live="polite">
-                    <div class="result-header">
-                        <h3 id="resultTitle" class="result-celebration-title">
-                            🌲 Height: <strong>11.7 m</strong>
-                        </h3>
-                        <div id="resultAltUnit" class="result-alt-unit">
-                            (38.4 ft)
-                        </div>
-                    </div>
-
-                    <!-- Visual Breakdown Bar -->
-                    <div class="breakdown-section">
-                        <div class="breakdown-title">
-                            <span>Height Breakdown</span>
-                            <span id="breakdownTotalBadge">Rise + Pillar</span>
-                        </div>
-
-                        <!-- Stacked Bar (Rise + Pillar) -->
-                        <div class="stacked-bar-container">
-                            <div id="barRise" class="bar-segment-rise" style="width: 89.7%;" title="Rise above pillar"></div>
-                            <div id="barEye" class="bar-segment-eye" style="width: 10.3%;" title="Pillar height"></div>
-                        </div>
-
-                        <!-- Breakdown Legend -->
-                        <div class="breakdown-legend">
-                            <div class="legend-item">
-                                <span class="legend-dot dot-primary"></span>
-                                <span>Rise (h): <strong id="riseValueText">10.5 m</strong></span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-dot dot-amber"></span>
-                                <span>Pillar (h<sub>pillar</sub>): <strong id="eyeValueText">1.2 m</strong></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Simple Math Equation Box -->
-                    <div id="equationBox" class="equation-box">
-                        10.5 m (rise) + 1.2 m (pillar) = 11.7 m total
-                    </div>
-
-                    <!-- Sightline Note -->
-                    <div id="sightlineNote" class="sightline-note">
-                        Sightline (hypotenuse): 18.3 m
-                    </div>
-
-                    <!-- Result Action Buttons -->
-                    <div class="result-actions">
-                        <button id="celebrateBtn" class="btn-squishy btn-squishy-primary">
-                            <span>🎉</span> Celebrate
-                        </button>
-                        <button id="copyResultBtn" class="btn-squishy btn-squishy-secondary">
-                            <span>📋</span> Copy
-                        </button>
-                    </div>
-                </div>
-
-            </section>
-        </div>
     </main>
+
+    <!-- Fixed Pillar Height Setup Modal -->
+    <div id="pillarModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pillarModalTitle">
+        <div class="modal-card pillar-modal-card">
+            <button id="closePillarBtn" class="modal-close-btn" aria-label="Close pillar settings">&times;</button>
+            <h3 id="pillarModalTitle" class="modal-title">⚙ Fixed Pillar Height</h3>
+            <p style="font-size:0.88rem; color:var(--color-text-secondary); margin-top:0.35rem;">
+                Set the height of your observation pillar or mounting stand once. This value is saved automatically across sessions.
+            </p>
+
+            <div class="pillar-setup-row">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:600; font-size:0.92rem; color:var(--color-text-primary);">Pillar Height (h<sub>pillar</sub>):</span>
+                    <div class="input-display-pill input-display-pill-large">
+                        <input type="number" id="pillarModalInput" class="num-input num-input-large" value="1.20" min="0.2" max="3.5" step="0.05" aria-label="Pillar height value">
+                        <span class="input-unit unit-label">m</span>
+                    </div>
+                </div>
+                <div class="slider-container" style="margin:0.4rem 0;">
+                    <input type="range" id="pillarModalRange" class="custom-range" value="1.20" min="0.4" max="2.5" step="0.05" aria-label="Pillar height slider">
+                </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="preset-row" id="pillarPresets" style="margin-top:0.85rem; justify-content:center;">
+                <button class="preset-btn" data-eye-m="0.80" data-eye-ft="2.6">Low (0.8 m)</button>
+                <button class="preset-btn active" data-eye-m="1.20" data-eye-ft="3.9">Standard (1.2 m)</button>
+                <button class="preset-btn" data-eye-m="1.50" data-eye-ft="4.9">High (1.5 m)</button>
+            </div>
+
+            <div class="pillar-datum-note">
+                📌 Fixed pillar datum &bull; Observer eye height does not affect the calculation
+            </div>
+
+            <button id="pillarSaveBtn" class="btn-squishy btn-squishy-primary" style="width:100%; margin-top:1.25rem; justify-content:center;">
+                Save &amp; Done
+            </button>
+        </div>
+    </div>
 
     <!-- Educational Guide Modal -->
     <div id="guideModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
