@@ -179,29 +179,33 @@
                     </details>
                 </div>
 
-                <!-- STEP 3 CARD: Eye Height -->
+                <!-- STEP 3 CARD: Pillar Height -->
                 <div class="step-card">
                     <div class="step-header">
                         <div class="step-title-group">
                             <span class="step-number">3</span>
-                            <h2 class="step-title">Observer Eye Height (h<sub>eye</sub>)</h2>
+                            <h2 class="step-title">Pillar Height (h<sub>pillar</sub>)</h2>
                         </div>
                         <div class="input-display-pill">
-                            <input type="number" id="eyeHeightInput" class="num-input" value="1.60" min="0.5" max="3.0" step="0.05" aria-label="Eye height">
+                            <input type="number" id="eyeHeightInput" class="num-input" value="1.20" min="0.2" max="3.0" step="0.05" aria-label="Pillar height">
                             <span class="input-unit unit-label">m</span>
                         </div>
                     </div>
 
-                    <!-- Eye Height Range Slider -->
+                    <!-- Pillar Height Range Slider -->
                     <div class="slider-container">
-                        <input type="range" id="eyeHeightRange" class="custom-range" value="1.60" min="0.8" max="2.4" step="0.05" aria-label="Eye height slider">
+                        <input type="range" id="eyeHeightRange" class="custom-range" value="1.20" min="0.4" max="2.5" step="0.05" aria-label="Pillar height slider">
                     </div>
 
-                    <!-- Quick Presets for Eye Height -->
+                    <!-- Quick Presets for Pillar Height -->
                     <div class="preset-row" id="eyePresets">
-                        <button class="preset-btn" data-eye-m="1.20" data-eye-ft="3.9">Kid (1.2m)</button>
-                        <button class="preset-btn active" data-eye-m="1.60" data-eye-ft="5.2">Adult (1.6m)</button>
-                        <button class="preset-btn" data-eye-m="1.80" data-eye-ft="5.9">Tall (1.8m)</button>
+                        <button class="preset-btn" data-eye-m="0.80" data-eye-ft="2.6">Low (0.8m)</button>
+                        <button class="preset-btn active" data-eye-m="1.20" data-eye-ft="3.9">Standard (1.2m)</button>
+                        <button class="preset-btn" data-eye-m="1.50" data-eye-ft="4.9">High (1.5m)</button>
+                    </div>
+
+                    <div style="margin-top: 0.65rem; font-size: 0.78rem; color: var(--color-text-muted);">
+                        📌 Fixed pillar datum &bull; Observer eye height does not affect the calculation
                     </div>
                 </div>
 
@@ -209,10 +213,10 @@
                 <div class="result-card" aria-live="polite">
                     <div class="result-header">
                         <h3 id="resultTitle" class="result-celebration-title">
-                            🌲 Height: <strong>12.1 m</strong>
+                            🌲 Height: <strong>11.7 m</strong>
                         </h3>
                         <div id="resultAltUnit" class="result-alt-unit">
-                            (39.7 ft)
+                            (38.4 ft)
                         </div>
                     </div>
 
@@ -220,13 +224,13 @@
                     <div class="breakdown-section">
                         <div class="breakdown-title">
                             <span>Height Breakdown</span>
-                            <span id="breakdownTotalBadge">Rise + Eye</span>
+                            <span id="breakdownTotalBadge">Rise + Pillar</span>
                         </div>
 
-                        <!-- Stacked Bar (Rise + Eye) -->
+                        <!-- Stacked Bar (Rise + Pillar) -->
                         <div class="stacked-bar-container">
-                            <div id="barRise" class="bar-segment-rise" style="width: 86.8%;" title="Rise above eye"></div>
-                            <div id="barEye" class="bar-segment-eye" style="width: 13.2%;" title="Eye level height"></div>
+                            <div id="barRise" class="bar-segment-rise" style="width: 89.7%;" title="Rise above pillar"></div>
+                            <div id="barEye" class="bar-segment-eye" style="width: 10.3%;" title="Pillar height"></div>
                         </div>
 
                         <!-- Breakdown Legend -->
@@ -237,14 +241,14 @@
                             </div>
                             <div class="legend-item">
                                 <span class="legend-dot dot-amber"></span>
-                                <span>Eye (h<sub>eye</sub>): <strong id="eyeValueText">1.6 m</strong></span>
+                                <span>Pillar (h<sub>pillar</sub>): <strong id="eyeValueText">1.2 m</strong></span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Simple Math Equation Box -->
                     <div id="equationBox" class="equation-box">
-                        10.5 m (rise) + 1.6 m (eye) = 12.1 m total
+                        10.5 m (rise) + 1.2 m (pillar) = 11.7 m total
                     </div>
 
                     <!-- Sightline Note -->
@@ -287,9 +291,10 @@
                     <p class="formula-line">Rise (h) = Distance × tan(θ)</p>
                 </div>
                 <div class="guide-step-card">
-                    <h4>4. Observer Eye Height</h4>
-                    <p>Add the vertical height from ground to observer eyes:</p>
-                    <p class="formula-line formula-nature">Total Height = Rise (h) + Eye Height (h<sub>eye</sub>)</p>
+                    <h4>4. Pillar Height</h4>
+                    <p>The clinometer rests on a fixed observation pillar or stand. Add the pillar's height above the ground:</p>
+                    <p class="formula-line formula-nature">Total Height = Rise (h) + Pillar Height (h<sub>pillar</sub>)</p>
+                    <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem;">Observer eye height does not affect the calculation.</p>
                 </div>
                 <div class="guide-step-card step-card-diy">
                     <h4>🛠️ Homemade Protractor Clinometer</h4>

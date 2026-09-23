@@ -12,7 +12,7 @@ const state = {
     target: 'tree', // 'tree', 'building', 'flagpole'
     distance: 15.0,
     angle: 35.0,
-    eyeHeight: 1.60,
+    eyeHeight: 1.20,
     wasmLoaded: false
 };
 
@@ -445,9 +445,9 @@ class HeightFinderApp {
         eyePresets.forEach(btn => {
             const mVal = btn.getAttribute('data-eye-m');
             const ftVal = btn.getAttribute('data-eye-ft');
-            if (mVal === '1.20') btn.textContent = unit === 'm' ? 'Kid (1.2m)' : 'Kid (3.9ft)';
-            if (mVal === '1.60') btn.textContent = unit === 'm' ? 'Adult (1.6m)' : 'Adult (5.2ft)';
-            if (mVal === '1.80') btn.textContent = unit === 'm' ? 'Tall (1.8m)' : 'Tall (5.9ft)';
+            if (mVal === '0.80') btn.textContent = unit === 'm' ? 'Low (0.8m)' : 'Low (2.6ft)';
+            if (mVal === '1.20') btn.textContent = unit === 'm' ? 'Standard (1.2m)' : 'Standard (3.9ft)';
+            if (mVal === '1.50') btn.textContent = unit === 'm' ? 'High (1.5m)' : 'High (4.9ft)';
         });
     }
 
@@ -547,7 +547,7 @@ class HeightFinderApp {
         // Equation Box
         const eqBox = document.getElementById('equationBox');
         if (eqBox) {
-            eqBox.textContent = `${h.toFixed(1)} ${u} (rise) + ${hEye.toFixed(1)} ${u} (eye) = ${totalH.toFixed(1)} ${u} total`;
+            eqBox.textContent = `${h.toFixed(1)} ${u} (rise) + ${hEye.toFixed(1)} ${u} (pillar) = ${totalH.toFixed(1)} ${u} total`;
         }
 
         // Sightline note
@@ -580,7 +580,7 @@ class HeightFinderApp {
     copyResult() {
         const u = state.unit;
         const calc = MathEngine.calculateDirect(state.distance, state.angle, state.eyeHeight);
-        const text = `Height Explorer:\nTarget: ${state.target}\nDistance (d): ${calc.distance.toFixed(1)} ${u}\nAngle (θ): ${calc.angle_deg.toFixed(1)}°\nRise (h): ${calc.h.toFixed(1)} ${u}\nEye (h_eye): ${calc.eye_height.toFixed(1)} ${u}\nTotal Height: ${calc.total_height.toFixed(1)} ${u}`;
+        const text = `Height Explorer:\nTarget: ${state.target}\nDistance (d): ${calc.distance.toFixed(1)} ${u}\nAngle (θ): ${calc.angle_deg.toFixed(1)}°\nRise (h): ${calc.h.toFixed(1)} ${u}\nPillar (h_pillar): ${calc.eye_height.toFixed(1)} ${u}\nTotal Height: ${calc.total_height.toFixed(1)} ${u}`;
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => this.showToast());

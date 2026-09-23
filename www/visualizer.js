@@ -25,9 +25,9 @@ export class ClinometerVisualizer {
         this.state = {
             distance: 15.0,    // d
             angle: 35.0,       // theta (deg)
-            eyeHeight: 1.6,    // h_eye
+            eyeHeight: 1.2,    // h_pillar (pillar height)
             h: 10.5,           // h = d * tan(angle)
-            totalHeight: 12.1, // H = h + h_eye
+            totalHeight: 11.7, // H = h + h_pillar
             hypotenuse: 18.31  // L = d / cos(angle)
         };
 
@@ -356,78 +356,267 @@ export class ClinometerVisualizer {
     drawFriendlySurveyor(obsX, groundY, figureH, eyeY, targetX, topY, theta) {
         const ctx = this.ctx;
         ctx.save();
-        ctx.translate(obsX, groundY);
 
-        // Normalize figure dimensions proportionally
-        const h = Math.max(48, Math.min(96, figureH * 1.1));
-        const headR = h * 0.16;
-        const bodyW = h * 0.24;
-        const bodyH = h * 0.44;
+        // ----------------------------------------------------
+        // A. Fixed Observation Pillar at obsX (from groundY up to eyeY)
+        // figureH is the pillar height in canvas pixels (hPillar * scale)
+        // ----------------------------------------------------
+        const pillarTopY = eyeY;
+        const pillarW = 16;
 
-        // Shadow under feet
-        ctx.fillStyle = 'rgba(38, 36, 32, 0.18)';
+        // 1. Pillar Ground Shadow
+        ctx.fillStyle = 'rgba(38, 36, 32, 0.2)';
         ctx.beginPath();
-        ctx.ellipse(0, 0, headR * 1.5, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(obsX, groundY, 20, 5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Legs / Pants (deep espresso ink #262420)
-        ctx.strokeStyle = '#262420';
-        ctx.lineWidth = h * 0.09;
-        ctx.lineCap = 'round';
-        // Left leg
+        // 2. Pillar Base Plinth (stepped architectural stone)
+        ctx.fillStyle = '#DBD5C6';
+        ctx.strokeStyle = '#B0A898';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(-headR * 0.45, -bodyH * 0.6);
-        ctx.lineTo(-headR * 0.45, 0);
+        ctx.roundRect(obsX - 16, groundY - 4, 32, 5, 2);
+        ctx.fill();
         ctx.stroke();
-        // Right leg
+
+        ctx.fillStyle = '#E7E0D0';
         ctx.beginPath();
-        ctx.moveTo(headR * 0.45, -bodyH * 0.6);
-        ctx.lineTo(headR * 0.45, 0);
+        ctx.roundRect(obsX - 12, groundY - 8, 24, 5, 1.5);
+        ctx.fill();
+        ctx.stroke();
+
+        // 3. Pillar Column Shaft
+        const shaftTop = Math.min(groundY - 10, pillarTopY + 4);
+        const shaftH = groundY - 8 - shaftTop;
+        if (shaftH > 2) {
+            // Main stone column
+            const shaftGrad = ctx.createLinearGradient(obsX - pillarW / 2, 0, obsX + pillarW / 2, 0);
+            shaftGrad.addColorStop(0, '#DBD5C6');
+            shaftGrad.addColorStop(0.25, '#F1EFE8');
+            shaftGrad.addColorStop(0.75, '#E7E0D0');
+            shaftGrad.addColorStop(1, '#C8C0B0');
+
+            ctx.fillStyle = shaftGrad;
+            ctx.strokeStyle = '#9E9686';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.rect(obsX - pillarW / 2, shaftTop, pillarW, shaftH);
+            ctx.fill();
+            ctx.stroke();
+
+            // Vertical architectural fluting
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(obsX - 3, shaftTop + 2);
+            ctx.lineTo(obsX - 3, shaftTop + shaftH - 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(150, 140, 125, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(obsX + 3, shaftTop + 2);
+            ctx.lineTo(obsX + 3, shaftTop + shaftH - 2);
+            ctx.stroke();
+
+            // Survey datum benchmark brass plaque on the pillar
+            if (shaftH > 20) {
+                const plaqueY = shaftTop + shaftH * 0.45;
+                ctx.fillStyle = '#F5C842';
+                ctx.strokeStyle = '#B38600';
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                ctx.roundRect(obsX - 5, plaqueY - 5, 10, 10, 1.5);
+                ctx.fill();
+                ctx.stroke();
+                // Crosshair on benchmark
+                ctx.strokeStyle = '#262420';
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                ctx.moveTo(obsX - 3, plaqueY);
+                ctx.lineTo(obsX + 3, plaqueY);
+                ctx.moveTo(obsX, plaqueY - 3);
+                ctx.lineTo(obsX, plaqueY + 3);
+                ctx.stroke();
+            }
+        }
+
+        // 4. Pillar Capital / Dark Metal Mounting Plate at eyeY
+        ctx.fillStyle = '#262420';
+        ctx.beginPath();
+        ctx.roundRect(obsX - 14, pillarTopY - 1, 28, 4, 1.5);
+        ctx.fill();
+
+        // Brass swivel mount / leveling base
+        ctx.fillStyle = '#DDAE27';
+        ctx.strokeStyle = '#A37F15';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(obsX - 7, pillarTopY - 5, 14, 4, 1);
+        ctx.fill();
+        ctx.stroke();
+
+        // ----------------------------------------------------
+        // B. Clinometer Instrument Mounted on Top of Pillar
+        // ----------------------------------------------------
+        const rad = (theta * Math.PI) / 180;
+        ctx.save();
+        ctx.translate(obsX, pillarTopY); // Pivot center is exactly at pillar top (obsX, eyeY)
+
+        // Pivot brass pin
+        ctx.fillStyle = '#F5C842';
+        ctx.strokeStyle = '#262420';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Rotate for sighting tube
+        ctx.save();
+        ctx.rotate(-rad);
+
+        // Sighting tube straw (warm ochre #F5C842)
+        ctx.fillStyle = '#F5C842';
+        ctx.strokeStyle = '#DDAE27';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(-8, -3, 34, 6, 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Eyepiece ring on left
+        ctx.fillStyle = '#262420';
+        ctx.beginPath();
+        ctx.roundRect(-9.5, -4.5, 3, 9, 1);
+        ctx.fill();
+
+        // Objective lens collar on right
+        ctx.fillStyle = '#262420';
+        ctx.beginPath();
+        ctx.roundRect(24, -4, 2.5, 8, 1);
+        ctx.fill();
+
+        // Protractor dial hanging below straw
+        ctx.fillStyle = 'rgba(251, 250, 246, 0.95)';
+        ctx.strokeStyle = '#DBD5C6';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(10, 3, 11, 0, Math.PI);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Little angle tick marks
+        ctx.strokeStyle = '#8A8275';
+        ctx.lineWidth = 0.8;
+        for (let a = 0.3; a < Math.PI; a += 0.5) {
+            ctx.beginPath();
+            ctx.moveTo(10 + Math.cos(a) * 8, 3 + Math.sin(a) * 8);
+            ctx.lineTo(10 + Math.cos(a) * 11, 3 + Math.sin(a) * 11);
+            ctx.stroke();
+        }
+
+        // Gravity Plumb Line hanging straight down
+        ctx.save();
+        ctx.translate(10, 3);
+        ctx.rotate(rad); // counter-rotate so plumb string stays strictly vertical
+        ctx.strokeStyle = '#262420';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(20, 0);
+        ctx.stroke();
+
+        // Plumb bob / brass weight
+        ctx.fillStyle = '#28536B';
+        ctx.strokeStyle = '#1F4256';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.arc(21, 0, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.restore(); // Restore sighting tube rotation
+        ctx.restore(); // Restore pillar top translation
+
+        // ----------------------------------------------------
+        // C. Friendly Surveyor standing beside the pillar
+        // Height is natural & fixed, decoupled from pillar height!
+        // ----------------------------------------------------
+        const surveyorX = obsX - 28;
+        ctx.save();
+        ctx.translate(surveyorX, groundY);
+
+        const headR = 10;
+        const bodyW = 16;
+        const bodyH = 28;
+
+        // Shadow under surveyor's feet
+        ctx.fillStyle = 'rgba(38, 36, 32, 0.16)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, headR * 1.4, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Legs / Pants (deep espresso #262420)
+        ctx.strokeStyle = '#262420';
+        ctx.lineWidth = 5.5;
+        ctx.lineCap = 'round';
+        // Back leg
+        ctx.beginPath();
+        ctx.moveTo(-4, -bodyH * 0.6);
+        ctx.lineTo(-4, 0);
+        ctx.stroke();
+        // Front leg
+        ctx.beginPath();
+        ctx.moveTo(4, -bodyH * 0.6);
+        ctx.lineTo(4, 0);
         ctx.stroke();
 
         // Shoes (dark charcoal)
         ctx.fillStyle = '#3D3A34';
         ctx.beginPath();
-        ctx.ellipse(-headR * 0.45 - 2, 0, 5, 3, 0, 0, Math.PI * 2);
-        ctx.ellipse(headR * 0.45 + 2, 0, 5, 3, 0, 0, Math.PI * 2);
+        ctx.ellipse(-5, 0, 5, 2.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(5, 0, 5, 2.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // Torso / Shirt (crisp warm cream #FBFAF6)
         ctx.fillStyle = '#FBFAF6';
         ctx.beginPath();
-        ctx.roundRect(-bodyW / 2, -bodyH - h * 0.16, bodyW, bodyH, 6);
+        ctx.roundRect(-bodyW / 2, -bodyH - 9, bodyW, bodyH, 5);
         ctx.fill();
 
         // Vest over shirt (terracotta #E05A47)
         ctx.fillStyle = '#E05A47';
         ctx.beginPath();
-        ctx.roundRect(-bodyW / 2, -bodyH - h * 0.16, bodyW * 0.35, bodyH * 0.9, 4);
-        ctx.roundRect(bodyW * 0.15, -bodyH - h * 0.16, bodyW * 0.35, bodyH * 0.9, 4);
+        ctx.roundRect(-bodyW / 2, -bodyH - 9, bodyW * 0.38, bodyH * 0.9, 3);
+        ctx.roundRect(bodyW * 0.12, -bodyH - 9, bodyW * 0.38, bodyH * 0.9, 3);
         ctx.fill();
 
-        // Head (friendly warm skin tone)
-        const headY = -bodyH - h * 0.16 - headR;
+        // Head
+        const headY = -bodyH - 9 - headR;
         ctx.fillStyle = '#F7D0B2';
         ctx.beginPath();
         ctx.arc(0, headY, headR, 0, Math.PI * 2);
         ctx.fill();
 
-        // Friendly smiling face (facing right towards target)
+        // Friendly smiling face (facing right towards clinometer)
         ctx.fillStyle = '#262420';
-        // Eye
         ctx.beginPath();
-        ctx.arc(headR * 0.35, headY - headR * 0.15, 2, 0, Math.PI * 2);
+        ctx.arc(headR * 0.35, headY - headR * 0.15, 1.8, 0, Math.PI * 2);
         ctx.fill();
+
         // Smile
         ctx.strokeStyle = '#8B5A3E';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
         ctx.arc(headR * 0.3, headY + headR * 0.15, headR * 0.35, 0.1, Math.PI * 0.6);
         ctx.stroke();
+
         // Rosy cheek
         ctx.fillStyle = 'rgba(224, 90, 71, 0.35)';
         ctx.beginPath();
-        ctx.arc(headR * 0.25, headY + headR * 0.15, 3, 0, Math.PI * 2);
+        ctx.arc(headR * 0.25, headY + headR * 0.15, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
         // Surveyor cap (petrol slate with visor)
@@ -435,69 +624,53 @@ export class ClinometerVisualizer {
         ctx.beginPath();
         ctx.arc(0, headY - headR * 0.2, headR * 1.05, Math.PI, Math.PI * 2);
         ctx.fill();
+
         // Cap visor
         ctx.fillStyle = '#1F4256';
         ctx.beginPath();
-        ctx.moveTo(headR * 0.4, headY - headR * 0.2);
+        ctx.moveTo(headR * 0.3, headY - headR * 0.2);
         ctx.lineTo(headR * 1.35, headY - headR * 0.05);
-        ctx.lineTo(headR * 0.6, headY);
+        ctx.lineTo(headR * 0.5, headY);
         ctx.closePath();
         ctx.fill();
 
-        // Sighting tube / straw clinometer held to eye!
-        const rad = (theta * Math.PI) / 180;
-        ctx.save();
-        ctx.translate(headR * 0.35, headY - headR * 0.15); // eye anchor
-        ctx.rotate(-rad);
-
-        // Clinometer straw (warm ochre #F5C842)
-        ctx.fillStyle = '#F5C842';
-        ctx.strokeStyle = '#DDAE27';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(-6, -3, 30, 6, 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // Little protractor base attached to straw
-        ctx.fillStyle = 'rgba(251, 250, 246, 0.9)';
-        ctx.strokeStyle = '#DBD5C6';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(10, 3, 10, 0, Math.PI);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Plumb string hanging vertically straight down due to gravity!
-        // Counter-rotate by rad so string stays vertical
-        ctx.save();
-        ctx.translate(10, 3);
-        ctx.rotate(rad); // string hangs straight down regardless of straw angle
-        ctx.strokeStyle = '#262420';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, 18);
-        ctx.stroke();
-        // Plumb weight / washer (petrol)
-        ctx.fillStyle = '#28536B';
-        ctx.beginPath();
-        ctx.arc(0, 19, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.restore(); // restore straw rotation
-
-        // Arm holding the clinometer
+        // Left arm holding clipboard / field notebook
         ctx.strokeStyle = '#E05A47';
-        ctx.lineWidth = h * 0.08;
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(-headR * 0.2, -bodyH * 0.85);
-        ctx.lineTo(headR * 0.5, headY + headR * 0.4);
+        ctx.moveTo(-headR * 0.4, -bodyH * 0.75);
+        ctx.lineTo(-headR * 0.8, -bodyH * 0.35);
         ctx.stroke();
 
-        ctx.restore();
+        // Clipboard
+        ctx.fillStyle = '#FBFAF6';
+        ctx.strokeStyle = '#9E9686';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(-headR * 1.4, -bodyH * 0.45, 9, 12, 1);
+        ctx.fill();
+        ctx.stroke();
+
+        // Right arm reaching forward towards the pillar instrument
+        const armTargetX = obsX - surveyorX - 5; // near the pillar mount
+        const armTargetY = pillarTopY - groundY;
+        ctx.strokeStyle = '#E05A47';
+        ctx.lineWidth = 4.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(headR * 0.3, -bodyH * 0.75);
+        ctx.quadraticCurveTo(headR * 1.0, -bodyH * 0.5, armTargetX, Math.min(-15, armTargetY + 5));
+        ctx.stroke();
+
+        // Surveyor hand at knob
+        ctx.fillStyle = '#F7D0B2';
+        ctx.beginPath();
+        ctx.arc(armTargetX, Math.min(-15, armTargetY + 5), 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore(); // Restore surveyor translation
+
+        ctx.restore(); // Final restore
     }
 
     drawTargetObject(targetX, groundY, objectH) {
@@ -832,7 +1005,7 @@ export class ClinometerVisualizer {
         ctx.strokeStyle = '#57534A';
         ctx.lineWidth = 1.5;
 
-        // 1. Eye height bracket [groundY -> eyeY]
+        // 1. Pillar height bracket [groundY -> eyeY]
         ctx.beginPath();
         ctx.moveTo(bx, groundY);
         ctx.lineTo(bx, eyeY);
@@ -842,12 +1015,12 @@ export class ClinometerVisualizer {
         ctx.lineTo(bx + 5, eyeY);
         ctx.stroke();
 
-        // Eye label
+        // Pillar label
         ctx.font = '600 12px Inter, sans-serif';
         ctx.fillStyle = '#2F4A34';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`Eye: ${hEye.toFixed(1)} ${this.unit}`, bx + 8, (groundY + eyeY) / 2);
+        ctx.fillText(`Pillar: ${hEye.toFixed(1)} ${this.unit}`, bx + 8, (groundY + eyeY) / 2);
 
         // 2. Rise bracket [eyeY -> topY]
         ctx.beginPath();
@@ -910,7 +1083,7 @@ export class ClinometerVisualizer {
         ctx.font = 'bold 10px system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('◄ 🧍 ►', obsX, groundY - 6);
+        ctx.fillText('◄ Drag ►', obsX, groundY - 6);
 
         // 2. Target Tip Angle Drag Handle
         const isTipHover = this.hoverHandle === 'angleHandle' || (this.isDragging && this.dragTarget === 'angleHandle');
