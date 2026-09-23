@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Height Explorer — Clinometer Calculator</title>
+    <meta name="description" content="Trigonometric height estimation with clinometer angle and distance visualizer.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+    <!-- Header Banner -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <span class="brand-icon">🌳</span>
+                <div class="brand-text">
+                    <h1>
+                        Height Explorer
+                        <span id="engineBadge" class="engine-badge">⚡ Rust + WASM</span>
+                    </h1>
+                    <span class="brand-subhead">Clinometer trigonometry visualizer</span>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="header-actions">
+                <!-- Unit Switcher (Meters / Feet) -->
+                <div class="unit-pill-switcher" role="group" aria-label="Distance unit switcher">
+                    <button id="unitBtnM" class="unit-pill-btn active" data-unit="m">Meters</button>
+                    <button id="unitBtnFt" class="unit-pill-btn" data-unit="ft">Feet</button>
+                </div>
+
+                <!-- Sound FX Toggle -->
+                <button id="soundToggleBtn" class="btn-squishy btn-squishy-secondary" title="Toggle audio feedback">
+                    🔊 Audio
+                </button>
+
+                <!-- How It Works Guide Modal Trigger -->
+                <button id="guideModalBtn" class="btn-squishy btn-squishy-primary" title="Trigonometry guide">
+                    💡 Guide
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dual Layout Content -->
+    <main class="app-main">
+        <div class="calculator-grid">
+
+            <!-- LEFT COLUMN: Visual Scene -->
+            <section class="visual-card" aria-label="Interactive visual illustration">
+                <div class="visual-topbar">
+                    <!-- Target Object Selector -->
+                    <div class="target-selector" role="radiogroup" aria-label="Choose target to measure">
+                        <button class="target-btn active" data-theme="tree">
+                            <span>🌳</span> Tree
+                        </button>
+                        <button class="target-btn" data-theme="building">
+                            <span>🏢</span> Building
+                        </button>
+                        <button class="target-btn" data-theme="flagpole">
+                            <span>🚩</span> Flagpole
+                        </button>
+                    </div>
+
+                    <!-- Canvas Drag Hint Pill -->
+                    <div class="canvas-hint-pill">
+                        <span>👆</span> Drag surveyor or apex
+                    </div>
+                </div>
+
+                <!-- Canvas Visualizer Container -->
+                <div class="canvas-wrapper">
+                    <canvas id="sceneCanvas"></canvas>
+                </div>
+
+                <!-- Live Status Bar Under Canvas -->
+                <div class="visual-status-bar">
+                    <div class="status-item">
+                        <div class="status-label">Distance (d)</div>
+                        <div id="statusDistance" class="status-val">15.0 m</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Angle (θ)</div>
+                        <div id="statusAngle" class="status-val highlight-terracotta">35.0°</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Height (H)</div>
+                        <div id="statusHeight" class="status-val highlight-nature">12.1 m</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: Input Cards & Result -->
+            <section class="inputs-column" aria-label="Measurement inputs and results">
+
+                <!-- STEP 1 CARD: Distance -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-title-group">
+                            <span class="step-number">1</span>
+                            <h2 class="step-title">Distance (d)</h2>
+                        </div>
+                        <div class="input-display-pill">
+                            <input type="number" id="distanceInput" class="num-input" value="15.0" min="1" max="100" step="0.5" aria-label="Distance value">
+                            <span class="input-unit unit-label">m</span>
+                        </div>
+                    </div>
+
+                    <!-- Distance Range Slider -->
+                    <div class="slider-container">
+                        <input type="range" id="distanceRange" class="custom-range" value="15.0" min="2" max="50" step="0.5" aria-label="Distance slider">
+                    </div>
+
+                    <!-- Quick Preset Buttons -->
+                    <div class="preset-row" id="distancePresets">
+                        <button class="preset-btn" data-m="5" data-ft="15">5 m</button>
+                        <button class="preset-btn" data-m="10" data-ft="30">10 m</button>
+                        <button class="preset-btn active" data-m="15" data-ft="50">15 m</button>
+                        <button class="preset-btn" data-m="25" data-ft="80">25 m</button>
+                    </div>
+
+                    <!-- Paces Calculator Helper Box -->
+                    <div class="paces-helper-box">
+                        <div>🚶 <strong>Pace helper</strong> (~0.75 m / pace)</div>
+                        <div class="paces-row">
+                            <span>Paces:</span>
+                            <input type="number" id="pacesInput" class="paces-input" value="20" min="1" max="150">
+                            <button id="pacesApplyBtn" class="preset-btn" style="padding:0.3rem 0.75rem; min-height:30px;">Apply</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2 CARD: Tilt Angle -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-title-group">
+                            <span class="step-number">2</span>
+                            <h2 class="step-title">Clinometer Angle (θ)</h2>
+                        </div>
+                        <div class="input-display-pill">
+                            <input type="number" id="angleInput" class="num-input" value="35.0" min="1" max="85" step="0.5" aria-label="Angle in degrees">
+                            <span class="input-unit">°</span>
+                        </div>
+                    </div>
+
+                    <!-- Angle Range Slider -->
+                    <div class="slider-container">
+                        <input type="range" id="angleRange" class="custom-range" value="35.0" min="2" max="85" step="0.5" aria-label="Angle slider">
+                    </div>
+
+                    <!-- Angle Quick Presets -->
+                    <div class="preset-row">
+                        <button class="preset-btn" data-angle="15">15°</button>
+                        <button class="preset-btn active" data-angle="35">35°</button>
+                        <button class="preset-btn" data-angle="45">45° (1:1)</button>
+                        <button class="preset-btn" data-angle="60">60°</button>
+                    </div>
+
+                    <!-- Friendly Protractor Accordion -->
+                    <details class="protractor-accordion">
+                        <summary>📐 Plumb-line protractor reading</summary>
+                        <div class="protractor-content">
+                            <p>Sighting angle where weighted plumb line hangs:</p>
+                            <div class="string-sync-row">
+                                <label for="stringAngleInput">Plumb angle:</label>
+                                <div class="string-input-pill">
+                                    <input type="number" id="stringAngleInput" class="num-input" value="55" min="5" max="85" step="1" style="width:50px;">
+                                    <span class="input-unit">°</span>
+                                </div>
+                                <span id="stringConversionText" class="string-conv-text">➔ Tilt: 90° − 55° = 35.0°</span>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- STEP 3 CARD: Eye Height -->
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-title-group">
+                            <span class="step-number">3</span>
+                            <h2 class="step-title">Observer Eye Height (h<sub>eye</sub>)</h2>
+                        </div>
+                        <div class="input-display-pill">
+                            <input type="number" id="eyeHeightInput" class="num-input" value="1.60" min="0.5" max="3.0" step="0.05" aria-label="Eye height">
+                            <span class="input-unit unit-label">m</span>
+                        </div>
+                    </div>
+
+                    <!-- Eye Height Range Slider -->
+                    <div class="slider-container">
+                        <input type="range" id="eyeHeightRange" class="custom-range" value="1.60" min="0.8" max="2.4" step="0.05" aria-label="Eye height slider">
+                    </div>
+
+                    <!-- Quick Presets for Eye Height -->
+                    <div class="preset-row" id="eyePresets">
+                        <button class="preset-btn" data-eye-m="1.20" data-eye-ft="3.9">Kid (1.2m)</button>
+                        <button class="preset-btn active" data-eye-m="1.60" data-eye-ft="5.2">Adult (1.6m)</button>
+                        <button class="preset-btn" data-eye-m="1.80" data-eye-ft="5.9">Tall (1.8m)</button>
+                    </div>
+                </div>
+
+                <!-- RESULT CARD -->
+                <div class="result-card" aria-live="polite">
+                    <div class="result-header">
+                        <h3 id="resultTitle" class="result-celebration-title">
+                            🌲 Height: <strong>12.1 m</strong>
+                        </h3>
+                        <div id="resultAltUnit" class="result-alt-unit">
+                            (39.7 ft)
+                        </div>
+                    </div>
+
+                    <!-- Visual Breakdown Bar -->
+                    <div class="breakdown-section">
+                        <div class="breakdown-title">
+                            <span>Height Breakdown</span>
+                            <span id="breakdownTotalBadge">Rise + Eye</span>
+                        </div>
+
+                        <!-- Stacked Bar (Rise + Eye) -->
+                        <div class="stacked-bar-container">
+                            <div id="barRise" class="bar-segment-rise" style="width: 86.8%;" title="Rise above eye"></div>
+                            <div id="barEye" class="bar-segment-eye" style="width: 13.2%;" title="Eye level height"></div>
+                        </div>
+
+                        <!-- Breakdown Legend -->
+                        <div class="breakdown-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot dot-primary"></span>
+                                <span>Rise (h): <strong id="riseValueText">10.5 m</strong></span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot dot-amber"></span>
+                                <span>Eye (h<sub>eye</sub>): <strong id="eyeValueText">1.6 m</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simple Math Equation Box -->
+                    <div id="equationBox" class="equation-box">
+                        10.5 m (rise) + 1.6 m (eye) = 12.1 m total
+                    </div>
+
+                    <!-- Sightline Note -->
+                    <div id="sightlineNote" class="sightline-note">
+                        Sightline (hypotenuse): 18.3 m
+                    </div>
+
+                    <!-- Result Action Buttons -->
+                    <div class="result-actions">
+                        <button id="celebrateBtn" class="btn-squishy btn-squishy-primary">
+                            <span>🎉</span> Celebrate
+                        </button>
+                        <button id="copyResultBtn" class="btn-squishy btn-squishy-secondary">
+                            <span>📋</span> Copy
+                        </button>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- Educational Guide Modal -->
+    <div id="guideModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-card">
+            <button id="closeModalBtn" class="modal-close-btn" aria-label="Close guide modal">&times;</button>
+            <h3 id="modalTitle" class="modal-title">💡 Clinometer Trigonometry Guide</h3>
+            <div class="modal-body">
+                <div class="guide-step-card">
+                    <h4>1. Baseline Distance (d)</h4>
+                    <p>Measure horizontal ground distance from the observer to the base of the object using tape or paces.</p>
+                </div>
+                <div class="guide-step-card">
+                    <h4>2. Tilt Angle (θ)</h4>
+                    <p>Sight the apex of the object through the clinometer. The angle θ between horizontal and sightline is measured.</p>
+                </div>
+                <div class="guide-step-card">
+                    <h4>3. Trigonometry Formula</h4>
+                    <p>In a right triangle: <strong>tan(θ) = Opposite / Adjacent</strong>.</p>
+                    <p class="formula-line">Rise (h) = Distance × tan(θ)</p>
+                </div>
+                <div class="guide-step-card">
+                    <h4>4. Observer Eye Height</h4>
+                    <p>Add the vertical height from ground to observer eyes:</p>
+                    <p class="formula-line formula-nature">Total Height = Rise (h) + Eye Height (h<sub>eye</sub>)</p>
+                </div>
+                <div class="guide-step-card step-card-diy">
+                    <h4>🛠️ Homemade Protractor Clinometer</h4>
+                    <ol class="diy-list">
+                        <li>Fasten a straight straw along the 90° baseline of a protractor.</li>
+                        <li>Tie a weighted string (plumb line) to the center hole.</li>
+                        <li>Sight apex through straw: <strong>Tilt θ = |90° − plumb angle|</strong>.</li>
+                    </ol>
+                </div>
+                <div style="display:flex; justify-content:center; margin-top:0.5rem;">
+                    <button id="modalGotItBtn" class="btn-squishy btn-squishy-primary" style="width:100%; justify-content:center;">
+                        Got it
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification for Copy -->
+    <div id="toast" class="toast">Copied to clipboard ✨</div>
+
+    <!-- Clean Footer -->
+    <footer class="app-footer">
+        <div class="footer-inner">
+            <div>
+                <strong>Height Explorer</strong> &bull; Trigonometry Made Simple &bull; Rust WebAssembly &amp; Canvas
+            </div>
+        </div>
+    </footer>
+
+    <!-- App Scripts (ES Modules) -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
